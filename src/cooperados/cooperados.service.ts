@@ -88,12 +88,15 @@ export class CooperadosService {
 
   async updateStatus(id: string, arg: boolean) {
 
-    const user = await this.prismaService.cooperado.findFirstOrThrow({
+    const user = await this.prismaService.cooperado.findFirst({
       where: {
         id,
       },
     });
 
+    if (!user) {
+      throw new ConflictException('User not found');
+    }
     if (user.is_active === arg) {
       throw new ConflictException('Status already set');
     }
