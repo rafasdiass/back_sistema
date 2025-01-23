@@ -16,8 +16,9 @@ export class AuthService {
   ) {}
 
   async create(createUserDto: CreateUserDto, userId: string, role: string) {
-    const { name, email, password, cpf } = createUserDto;
-  
+    
+    const {first_name, last_name,phone, email, password, cpf } = createUserDto;
+    
     // Verifica se o usuário já existe
     const userAlreadyExists = await this.findByCpfOrEmail(cpf, email);
     if (userAlreadyExists) {
@@ -32,33 +33,39 @@ export class AuthService {
       cooperado: () =>
         this.prismaService.cooperado.create({
           data: {
-            name,
+            first_name,
+            last_name,
             email,
             password: hashedPassword,
-            role,
+            role: 'COOPERADO',
             cpf,
-            comercialId: userId,
-
+            phone,
+            comercialId: userId
           },
         }),
       comercial: () =>
         this.prismaService.comercial.create({
           data: {
-            name,
+            first_name,
+            last_name,
             email,
             password: hashedPassword,
-            role,
+            role: 'COMERCIAL',
             cpf,
+            phone
+
           },
         }),
       admin: () =>
         this.prismaService.admin.create({
           data: {
-            name,
+            first_name,
+            last_name,
             email,
             password: hashedPassword,
-            role,
+            role: 'ADMIN',
             cpf,
+            phone
           },
         }),
     };
@@ -127,10 +134,11 @@ export class AuthService {
   
     // Gera o payload com base no role do usuário
     const payload = this.createPayload(user);
-    console.log(payload);
+    
     // Retorna o token JWT
     return {
       access_token: this.jwtService.sign(payload),
+      user: { ...user, password: undefined },
     };
   }
   

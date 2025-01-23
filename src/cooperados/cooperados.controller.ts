@@ -14,20 +14,28 @@ export class CooperadosController {
 
   //ROTA PARA CRIAR USUÁRIO
   @UseGuards(AuthGuard('jwt'),RolesGuard)
-  @Roles('admin','comercial')
+  @Roles('ADMIN','COMERCIAL')
   @Post('registro')
   async create(@Body() createUserDto: CreateUserDto,@GetUserId() userId: string) {
     return await this.cooperadosService.create(createUserDto,userId);
   }
   
-  @UseGuards(AuthGuard('jwt'),RolesGuard)
-  @Roles('admin','comercial')
-  @Get()
-  async findAll(@Request() req:any,@GetUserId() userId: string) {
+  // @UseGuards(AuthGuard('jwt'),RolesGuard)
+  // @Roles('ADMIN','COMERCIAL')
+  // @Get()
+  // async findAll(@Request() req:any,@GetUserId() userId: string) {
     
-    return await this.cooperadosService.findAll(userId,req.user.role);
-  }
+  //   return await this.cooperadosService.findAll(userId,req.user.role);
+  // }
 
+  @UseGuards(AuthGuard('jwt'),RolesGuard)
+  @Roles('ADMIN','COMERCIAL')
+  @Get()
+  async findAllDeactivate(@Request() req:any,@GetUserId() userId: string) {
+    
+    return await this.cooperadosService.findAllDeactivate(userId,req.user.role);
+  }
+  
   @Get(':id')
   async findOne(@Param('id') id: string) {
     return this.cooperadosService.findOne(+id);

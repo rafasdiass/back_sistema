@@ -14,14 +14,14 @@ export class ComercialController {
 
   //ROTA PARA CRIAR COMERCIAL
   @UseGuards(AuthGuard('jwt'),RolesGuard)
-  @Roles('admin')
+  @Roles('ADMIN')
   @Post('registro')
   async createComercial(@Body() createUserDto: CreateUserDto,@GetUserId() userId: string) {
       return await this.comercialService.create(createUserDto,userId);
     }
   
   @UseGuards(AuthGuard('jwt'),RolesGuard)
-  @Roles('admin') 
+  @Roles('ADMIN') 
   @Get()
   findAll() {
     return this.comercialService.findAll();

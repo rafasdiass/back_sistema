@@ -54,12 +54,8 @@ export class ComercialService {
   async update(id: string, updateComercialDto: UpdateComercialDto) {
     
     try {
-      return await this.prismaService.comercial.update({
-        where: {
-          id: id
-        },
-        data: updateComercialDto
-      });
+      return
+      
     }
     catch (error) {
       return error;

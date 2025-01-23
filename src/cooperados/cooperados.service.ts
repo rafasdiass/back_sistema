@@ -38,7 +38,7 @@ export class CooperadosService {
   }
 
 
-  async findAllDeactivate(userId:string, role:string) {
+  async findAllDeactivate(userId:string, role:string):Promise<any> {
     
     
     if (role === 'comercial') {
@@ -47,19 +47,30 @@ export class CooperadosService {
           where:{
             comercialId:userId,
             AND:{
-              validated :false
+              is_active :false
             }
             
           }
         }
       )
 
+      users.forEach(user => {
+        delete user.password;
+      });
+
       return users
     }
 
-    const  users = await this.prismaService.cooperado.findMany()
+    let  users = await this.prismaService.cooperado.findMany()
 
-    return users;
+    //REMOVER A SENHA DOS USUÁRIOS
+
+    return users.map(user => {
+    const { password, ...rest } = user; // Remove o campo password
+    return rest;
+    });
+
+
 
   }
 
@@ -83,14 +94,21 @@ export class CooperadosService {
       },
     });
 
-    return await this.prismaService.cooperado.update({
-      where: {
-        id,
-      },
-      data: {
-        validated: arg,
-      },
+    if (user.is_active === arg) {
+      throw new ConflictException('Status already set');
+    }
 
+     // Atualiza o status do usuário E retorna o usuário atualizado SEM A SENHA
+
+    return await this.prismaService.cooperado.update({
+      where: { id },
+      data: {
+        is_active: arg,
+      },
+      omit: {
+       
+        password: true,
+      },  
     });
 
 

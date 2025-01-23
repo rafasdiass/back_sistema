@@ -14,7 +14,7 @@ export class AdminController {
   constructor(private readonly adminService: AdminService,private cooperadosService:CooperadosService) {}
 
   @UseGuards(AuthGuard('jwt'),RolesGuard)
-  @Roles('admin')
+  @Roles('ADMIN')
   @Post('registro')
   async createAdmin(@Body() createAdmindto: CreateAdminDto,@GetUserId() userId: string) {
     return await this.adminService.create(createAdmindto,userId);
@@ -22,14 +22,14 @@ export class AdminController {
 
   // ROTA PARA VALIDAR USUÁRIO
   @UseGuards(AuthGuard('jwt'),RolesGuard)
-  @Roles('admin')
+  @Roles('ADMIN')
   @Patch('validate/:id')
   async validateUser(@Param('id') id: string) {
     return await this.cooperadosService.updateStatus(id, true); // Sempre ativa
   }
 
   @UseGuards(AuthGuard('jwt'),RolesGuard)
-  @Roles('admin')
+  @Roles('ADMIN')
   @Get('validate')
   async validateUsers(@Request() req:any,@GetUserId() userId: string) {
       
@@ -37,7 +37,7 @@ export class AdminController {
     }
   // ROTA PARA DESATIVAR USUÁRIO
   @UseGuards(AuthGuard('jwt'),RolesGuard)
-  @Roles('admin')
+  @Roles('ADMIN')
   @Patch('invalidate/:id')
   async invalidateUser(@Param('id') id: string) {
     return await this.cooperadosService.updateStatus(id, false); // Sempre desativa
@@ -45,7 +45,7 @@ export class AdminController {
 
 
   @UseGuards(AuthGuard('jwt'),RolesGuard)
-  @Roles('admin')
+  @Roles('ADMIN')
   @Get()
   findAll() {
     return this.adminService.findAll();

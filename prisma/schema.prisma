@@ -14,43 +14,78 @@ datasource db {
 }
 
 
-model Cooperado {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  password  String
-  role      String   // Ex: 'usuario'
-  cpf       String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  validated Boolean  @default(false)  // Indica se o usuário foi validado pelo Admin
-  comercialId String @default("") // Id do Comercial que criou o usuário
-  comercial Comercial? @relation(fields: [comercialId], references: [id])
+// Enum para os papéis
+enum Role {
+  ADMIN
+  COMERCIAL
+  COOPERADO
 }
 
+// Modelo base para endereço
+model Address {
+  id           String  @id @default(uuid())
+  street       String  // Rua
+  number       String  // Número
+  neighborhood String  // Bairro
+  city         String  // Cidade
+  state        String  // Estado
+  postal_code  String  // Código postal
+  adminId      String? @unique
+  comercialId  String? @unique
+  cooperadoId  String? @unique
+  admin        Admin?  @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  comercial    Comercial? @relation(fields: [comercialId], references: [id], onDelete: Cascade)
+  cooperado    Cooperado? @relation(fields: [cooperadoId], references: [id], onDelete: Cascade)
+}
 
+// Campos compartilhados entre Admin, Comercial e Cooperado
 model Admin {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  password  String
-  role      String   // Ex: 'admin'
-  cpf       String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  isAdmin   Boolean  @default(true)
+  id                String   @id @default(uuid())
+  cpf         String   @unique
+  email             String   @unique
+  role              Role     @default(ADMIN)
+  first_name        String
+  last_name         String
+  phone             String
+  address           Address? // Relacionamento com Address
+  registration_date DateTime @default(now())
+  is_active         Boolean  @default(true)
+  password          String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
-
 
 model Comercial {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  password  String
-  role      String   // Ex: 'comercial'
-  cpf       String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  validated Boolean  @default(true)
-  cooperados   Cooperado[]
+  id                String      @id @default(uuid())
+  cpf               String      @unique
+  email             String      @unique
+  role              Role        @default(COMERCIAL)
+  first_name        String
+  last_name         String
+  phone             String
+  address           Address?    // Relacionamento com Address
+  registration_date DateTime    @default(now())
+  is_active         Boolean     @default(true)
+  password          String
+  cooperados        Cooperado[] // Relacionamento com Cooperado
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+}
+
+model Cooperado {
+  id                String      @id @default(uuid())
+  cpf               String      @unique
+  email             String      @unique
+  role              Role        @default(COOPERADO)
+  first_name        String
+  last_name         String
+  phone             String
+  address           Address?    // Relacionamento com Address
+  registration_date DateTime    @default(now())
+  is_active         Boolean     @default(false)
+  password          String
+  comercialId       String      // Campo para a chave estrangeira
+  comercial         Comercial   @relation(fields: [comercialId], references: [id]) // Relacionamento com Comercial
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
 }
