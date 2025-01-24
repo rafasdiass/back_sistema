@@ -56,7 +56,7 @@ export class AdminService {
     //
 
     return {
-      nome: admin.first_name,
+      nome: admin.first_name + ' ' + admin.last_name,
       cpf: admin.cpf,
       historicoPagamentos,
       pagamentosRealizados: 1000,
