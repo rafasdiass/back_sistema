@@ -46,6 +46,13 @@ export class AdminController {
 
   @UseGuards(AuthGuard('jwt'),RolesGuard)
   @Roles('ADMIN')
+  @Get('dashboard')
+  async dashboard(@GetUserId() userId: string) {
+    return await this.adminService.dashboard(userId); // Sempre ativa
+  }
+
+  @UseGuards(AuthGuard('jwt'),RolesGuard)
+  @Roles('ADMIN')
   @Get()
   findAll() {
     return this.adminService.findAll();

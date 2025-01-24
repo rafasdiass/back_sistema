@@ -1,0 +1,4 @@
+admin cria admin OK
+admin cria comercial
+comercial cria usuario
+usuario espera admin aceitar
