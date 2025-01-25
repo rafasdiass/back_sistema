@@ -8,20 +8,25 @@ import { RolesGuard } from 'src/auth/roles.stategy';
 import { CreateUserDto } from 'src/auth/dto/create-auth.dto';
 import { GetUserId } from 'src/auth/user.decorator';
 
+@UseGuards(AuthGuard('jwt'),RolesGuard)
+@Roles('COMERCIAL','ADMIN')
 @Controller('comercial')
 export class ComercialController {
   constructor(private readonly comercialService: ComercialService) {}
 
   //ROTA PARA CRIAR COMERCIAL
-  @UseGuards(AuthGuard('jwt'),RolesGuard)
-  @Roles('ADMIN')
+  @Roles('COMERCIAL')
+  @Get('dashboard')
+  async dashboard(@GetUserId() userId: string) {
+    console.log(userId);
+    return await this.comercialService.dashboard(userId); 
+  }
   @Post()
   async createComercial(@Body() createUserDto: CreateUserDto,@GetUserId() userId: string) {
       return await this.comercialService.create(createUserDto,userId);
     }
   
-  @UseGuards(AuthGuard('jwt'),RolesGuard)
-  @Roles('ADMIN') 
+ 
   @Get()
   findAll() {
     return this.comercialService.findAll();
@@ -40,5 +45,8 @@ export class ComercialController {
   @Delete(':id')
   remove(@Param('id') id: string,@GetUserId() userId: string) {
     return this.comercialService.remove(id,userId);
-  }
+  } 
+ 
+
+
 }
