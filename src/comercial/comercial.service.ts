@@ -3,12 +3,78 @@ import { CreateComercialDto } from './dto/create-comercial.dto';
 import { UpdateComercialDto } from './dto/update-comercial.dto';
 import { AuthService } from 'src/auth/auth.service';
 import { PrismaService } from 'src/prisma.service';
+import { stat } from 'fs';
 
 @Injectable()
 export class ComercialService {
+ 
 
   constructor (private authService:AuthService,private prismaService:PrismaService){}
 
+
+  async dashboard(userId: string) {
+    const admin = await this.prismaService.comercial.findUnique({
+      where: {
+        id: userId
+      }
+    });
+
+    // verifica se o usuario admin existe
+    if (!admin) {
+      throw new Error('User not found');
+    }
+
+    // busca a quantidade de cooperados
+    const cooperados = await this.prismaService.cooperado.count();
+
+    // busca a quantidade de comerciais
+    const comerciais = await this.prismaService.comercial.count();
+
+    // busca a quantidade de cooperados ativos  
+    const cooperadosAtivos = await this.prismaService.cooperado.count({
+      where: {
+        is_active: true
+      }
+    });
+
+    //mockar historico de pagamentos
+
+    const historicoPagamentos = [
+      { "nome": "Fulano da Silva", "valor": 200 },
+    { "nome": "Ciclano Pereira", "valor": 100 }
+      
+    ];
+
+    //
+
+    return {
+      totalPropostas: 10,
+      propostasPendentes: 5,
+      historicoPropostas: [
+        {
+          data: '2021-10-01', 
+          valor: 100,
+          status: 'aprovado',
+          cliente: 'Fulano da Silva'
+        },
+        {
+          data: '2021-10-02', 
+          valor: 200,
+          status: 'reprovado',
+          cliente: 'Ciclano Pereira'
+        },
+        {
+          data: '2021-10-03', 
+          valor: 300,
+          status: 'aprovado',
+          cliente: 'Beltrano da Silva'
+        }
+      ]
+       
+      };
+
+    
+  }
   async create(createComercialDto: CreateComercialDto,userId: string) {
     
     const role = 'comercial';
