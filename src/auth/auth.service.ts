@@ -17,7 +17,7 @@ export class AuthService {
 
   async create(createUserDto: CreateUserDto, userId: string, role: string) {
     
-    const {first_name, last_name,phone, email, password, cpf } = createUserDto;
+    const {first_name, last_name,phone, email, password, cpf, address } = createUserDto;
     
     // Verifica se o usuário já existe
     const userAlreadyExists = await this.findByCpfOrEmail(cpf, email);
@@ -40,7 +40,9 @@ export class AuthService {
             role: 'COOPERADO',
             cpf,
             phone,
-            comercialId: userId
+            comercialId: userId,
+            address
+
           },
         }),
       comercial: () =>
@@ -52,9 +54,11 @@ export class AuthService {
             password: hashedPassword,
             role: 'COMERCIAL',
             cpf,
-            phone
+            phone,
+            address
 
           },
+
         }),
       admin: () =>
         this.prismaService.admin.create({
@@ -65,7 +69,8 @@ export class AuthService {
             password: hashedPassword,
             role: 'ADMIN',
             cpf,
-            phone
+            phone,
+            address
           },
         }),
     };

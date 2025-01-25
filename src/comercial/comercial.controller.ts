@@ -15,7 +15,7 @@ export class ComercialController {
   //ROTA PARA CRIAR COMERCIAL
   @UseGuards(AuthGuard('jwt'),RolesGuard)
   @Roles('ADMIN')
-  @Post('registro')
+  @Post()
   async createComercial(@Body() createUserDto: CreateUserDto,@GetUserId() userId: string) {
       return await this.comercialService.create(createUserDto,userId);
     }
@@ -33,12 +33,12 @@ export class ComercialController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateComercialDto: UpdateComercialDto) {
-    return this.comercialService.update(id, updateComercialDto);
+  update(@Param('id') id: string, @Body() updateComercialDto: UpdateComercialDto,@GetUserId() userId: string) {
+    return this.comercialService.update(id, updateComercialDto,userId);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.comercialService.remove(id);
+  remove(@Param('id') id: string,@GetUserId() userId: string) {
+    return this.comercialService.remove(id,userId);
   }
 }

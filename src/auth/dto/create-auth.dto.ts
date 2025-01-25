@@ -15,31 +15,6 @@ import { Type } from 'class-transformer';
 
 
 
-class AddressDto {
-  @IsNotEmpty()
-  @IsString()
-  street: string;
-
-  @IsNotEmpty()
-  @IsString()
-  number: string;
-
-  @IsNotEmpty()
-  @IsString()
-  neighborhood: string;
-
-  @IsNotEmpty()
-  @IsString()
-  city: string;
-
-  @IsNotEmpty()
-  @IsString()
-  state: string;
-
-  @IsNotEmpty()
-  @Matches(/^\d{5}-?\d{3}$/, { message: 'Postal code must be in the format XXXXX-XXX.' })
-  postal_code: string;
-}
 
 export class CreateUserDto {
   
@@ -77,8 +52,14 @@ export class CreateUserDto {
   @IsOptional()
   @IsObject()
   @ValidateNested()
-  @Type(() => AddressDto)
-  address: AddressDto;
+  address?: {
+    street: string;
+    number: string;
+    neighborhood: string;
+    city: string;
+    state: string;
+    postal_code: string;
+  };
 
   
 }

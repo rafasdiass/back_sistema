@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import { CreateComercialDto } from './dto/create-comercial.dto';
 import { UpdateComercialDto } from './dto/update-comercial.dto';
 import { AuthService } from 'src/auth/auth.service';
@@ -12,6 +12,7 @@ export class ComercialService {
   async create(createComercialDto: CreateComercialDto,userId: string) {
     
     const role = 'comercial';
+  
     
     await this.authService.create(createComercialDto,userId,role);
     
@@ -20,23 +21,73 @@ export class ComercialService {
   async findAll() {
 
     try {
-      return await this.prismaService.comercial.findMany();
-    }
-    catch (error) {
+
+      const comerciais = await this.prismaService.comercial.findMany({
+        select: {
+          id: true,
+          first_name: true,
+          last_name: true,
+          email: true
+        }
+      });
+      // retorna o id, nome e email dos comerciais
+
+      return comerciais.map(comercial => {
+        return {
+          id: comercial.id,
+          name: comercial.first_name + ' ' + comercial.last_name,
+          email: comercial.email
+        }
+      }
+      );
+
+
+
+    } catch (error) {
+      
       return error;
     }
 
+   
 
 
   }
 
   async findOne(id: string) {
-    try
-
-    {
-      return await this.prismaService.comercial.findUnique({
+  
+      const comercial = await this.prismaService.comercial.findUnique({
         where: {
           id: id
+        }
+      });
+      
+      if (!comercial) {
+        throw new NotFoundException(`Comercial with ID ${id} not found`);
+      }
+      return {...comercial,
+        password: undefined
+      };
+
+
+
+  }
+
+  async update(id: string, updateComercialDto: UpdateComercialDto,userId: string) {
+
+    const comercial = await this.findOne(id); 
+
+    if (!comercial) {
+      throw new Error(`Comercial with ID ${id} not found`);
+    }
+    
+    try {
+      return await this.prismaService.comercial.update({
+        where: {
+          id: id
+        },
+        data: {
+          ...updateComercialDto,
+          
         }
       });
     }
@@ -44,27 +95,14 @@ export class ComercialService {
       return error;
     }
 
-
-
-
-
-
+    
   }
 
-  async update(id: string, updateComercialDto: UpdateComercialDto) {
+  async remove(id: string,userId: string) {
     
-    try {
-      return
-      
-    }
-    catch (error) {
-      return error;
-    }
+    const comercial = await this.findOne(id); 
 
-  }
-
-  async remove(id: string) {
-    
+    console.log(comercial);
     try {
       return await this.prismaService.comercial.delete({
         where: {
@@ -73,8 +111,12 @@ export class ComercialService {
       });
     }
     catch (error) {
-      return error;
+      throw new Error(`Error deleting Comercial with ID ${id}: ${error.message}`);
+    
     }
+
+
+
 
   }
 }

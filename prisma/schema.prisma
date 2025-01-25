@@ -25,22 +25,6 @@ enum Role {
   COOPERADO
 }
 
-// Modelo base para endereço
-model Address {
-  id           String  @id @default(uuid())
-  street       String  // Rua
-  number       String  // Número
-  neighborhood String  // Bairro
-  city         String  // Cidade
-  state        String  // Estado
-  postal_code  String  // Código postal
-  adminId      String? @unique
-  comercialId  String? @unique
-  cooperadoId  String? @unique
-  admin        Admin?  @relation(fields: [adminId], references: [id], onDelete: Cascade)
-  comercial    Comercial? @relation(fields: [comercialId], references: [id], onDelete: Cascade)
-  cooperado    Cooperado? @relation(fields: [cooperadoId], references: [id], onDelete: Cascade)
-}
 
 // Campos compartilhados entre Admin, Comercial e Cooperado
 model Admin {
@@ -51,7 +35,7 @@ model Admin {
   first_name        String
   last_name         String
   phone             String
-  address           Address? // Relacionamento com Address
+  address           Json? // Relacionamento com Address
   registration_date DateTime @default(now())
   is_active         Boolean  @default(true)
   password          String
@@ -67,7 +51,7 @@ model Comercial {
   first_name        String
   last_name         String
   phone             String
-  address           Address?    // Relacionamento com Address
+  address           Json?        // Campo JSON para armazenar o endereço
   registration_date DateTime    @default(now())
   is_active         Boolean     @default(true)
   password          String
@@ -75,6 +59,7 @@ model Comercial {
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
 }
+
 
 model Cooperado {
   id                String      @id @default(uuid())
@@ -84,7 +69,7 @@ model Cooperado {
   first_name        String
   last_name         String
   phone             String
-  address           Address?    // Relacionamento com Address
+  address           Json?    
   registration_date DateTime    @default(now())
   is_active         Boolean     @default(false)
   password          String
@@ -92,4 +77,12 @@ model Cooperado {
   comercial         Comercial   @relation(fields: [comercialId], references: [id]) // Relacionamento com Comercial
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
+}
+
+model Configs{
+  id String @id @default(uuid())
+  taxaJuros Float @default(2.5)
+  vencimento Int @default(10)
+  notificacao Boolean @default(true)
+
 }
