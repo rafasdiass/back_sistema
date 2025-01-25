@@ -9,9 +9,10 @@ import { GetUserId } from 'src/auth/user.decorator';
 import { CooperadosService } from 'src/cooperados/cooperados.service';
 import { Configuracoes } from './dto/configs.interface';
 
+
+@Controller('admin')
 @UseGuards(AuthGuard('jwt'),RolesGuard)
 @Roles('ADMIN')
-@Controller('admin')
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
@@ -76,7 +77,7 @@ export class AdminController {
   
   @Post('comerciais')
   async createComercial(@Body() createAdminDto: CreateAdminDto,@GetUserId() userId: string) {
-
+   
     return await this.adminService.createComercial(createAdminDto,userId);
   }
 
@@ -98,6 +99,53 @@ export class AdminController {
     return await this.adminService.removeComercial(id,userId);
   }
   
+  // ROTAS PARA COOPERADOS
+
+
+  @Get('cooperados')
+  async findAllCooperado(@GetUserId() userId: string) {
+    
+    return await this.adminService.findAllCooperado(userId);
+  }
+
+  @Post('cooperados')
+  async createCooperado(@Body() createAdminDto: CreateAdminDto,@GetUserId() userId: string) {
+     console.log('chegou aqui');
+    return await this.adminService.createCooperado(createAdminDto,userId);
+  }
+
+  @Get('cooperados/:id')
+  async findOneCooperado(@Param('id') id: string,@GetUserId() userId: string) {
+    return await this.adminService.finOneCooperado(id);
+  }
+
+  @Put('cooperados/:id')
+  async updateCooperado(@Param('id') id: string, @Body() updateAdminDto: UpdateAdminDto,@GetUserId() userId: string) {
+    return await this.adminService.updateCooperado(id, updateAdminDto,userId);
+  }
+
+
+  @Delete('cooperados/:id')
+  async removeCooperado(@Param('id') id: string,@GetUserId() userId: string) {
+    return await this.adminService.removeCooperado(id,userId);
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   @Get()
   findAll() {
     return this.adminService.findAll();
@@ -120,5 +168,5 @@ export class AdminController {
 
   
 
-  // ROTAS PARA COOPERADOS
+  
 }
