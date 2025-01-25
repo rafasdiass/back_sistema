@@ -38,16 +38,16 @@ export class CooperadosController {
   
   @Get(':id')
   async findOne(@Param('id') id: string) {
-    return this.cooperadosService.findOne(+id);
+    return this.cooperadosService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateCooperadoDto: UpdateCooperadoDto) {
-    return this.cooperadosService.update(+id, updateCooperadoDto);
+  update(@Param('id') id: string, @Body() updateCooperadoDto: UpdateCooperadoDto,@GetUserId() userId: string) {
+    return this.cooperadosService.update(id, updateCooperadoDto,userId);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.cooperadosService.remove(+id);
+  remove(@Param('id') id: string,@GetUserId() userId: string) {
+    return this.cooperadosService.remove(id,userId);
   }
 }
