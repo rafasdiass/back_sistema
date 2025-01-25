@@ -11,6 +11,8 @@ import { ComercialService } from 'src/comercial/comercial.service';
 @Injectable()
 export class AdminService {
   
+
+  
   
 
   constructor (private authService:AuthService, private prismaService:PrismaService,private cooperadosService:CooperadosService,private comercialService:ComercialService){}
@@ -208,9 +210,31 @@ export class AdminService {
     }
   }
 
+  // FUNCTIONS PARA COOPERADOS
 
+  async removeCooperado(id: string, userId: string) {
 
+    await this.cooperadosService.remove(id,userId);
 
+  }
+  async updateCooperado(id: string, updateAdminDto: UpdateAdminDto, userId: string) {
+    await this.cooperadosService.update(id,updateAdminDto,userId);
+  }
+
+  async findAllCooperado(userId: string) {
+
+    return await this.cooperadosService.findAll(userId,'admin');
+
+  }
+
+  async finOneCooperado(id: string) {
+   
+    return await this.cooperadosService.findOne(id);
+  }
+
+  async createCooperado(createAdminDto: CreateAdminDto, userId: string) {
+    await this.cooperadosService.create(createAdminDto,userId);
+  }
 
  
 
