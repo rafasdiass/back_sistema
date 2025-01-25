@@ -24,16 +24,58 @@ export class CooperadosService {
         {
           where:{
             comercialId:userId
+          },
+          select:{
+            id:true,
+            first_name:true,
+            last_name:true,
+            email:true,
+            phone:true,
+            cpf:true,
+            is_active:true
+
           }
         }
       )
 
-      return users
+      return users.map(user => ({
+        
+        id: user.id,
+        nome: user.first_name + ' ' + user.last_name,
+        email: user.email,
+        phone: user.phone,
+        cpf: user.cpf,
+        is_active: user.is_active
+
+      }));
     }
 
-    const  users = await this.prismaService.cooperado.findMany()
+    const  users = await this.prismaService.cooperado.findMany(
+      {
+        select:{
+          id:true,
+          first_name:true,
+          last_name:true,
+          email:true,
+          phone:true,
+          cpf:true,
+          is_active:true,
+          comercialId:true
+        }
+      }
+    )
 
-    return users;
+    return users.map(user => ({
+        id: user.id,
+        nome: user.first_name + ' ' + user.last_name,
+        email: user.email,
+        phone: user.phone,
+        cpf: user.cpf,
+        is_active: user.is_active,
+        comercialId: user.comercialId
+
+        
+      }));
 
   }
 
@@ -74,16 +116,78 @@ export class CooperadosService {
 
   }
 
-  async findOne(id: number) {
-    return `This action returns a #${id} cooperado`;
+  async findOne(id: string) {
+    
+    const user = await this.prismaService.cooperado.findFirst({
+      where: {
+        id,
+      },
+    });
+
+    if (!user) {
+      throw new ConflictException('User not found');
+    }
+
+    return {
+      ...user,
+      password: undefined,
+    }
+
   }
 
-  async update(id: number, updateCooperadoDto: UpdateCooperadoDto) {
-    return `This action updates a #${id} cooperado`;
+  async update(id: string, updateCooperadoDto: UpdateCooperadoDto,userId:string) {
+    
+    const user = await this.prismaService.cooperado.findFirst({
+      where: {
+        id,
+      },
+    });
+
+    if (!user) {
+      throw new ConflictException('User not found');
+    }
+
+    return await this.prismaService.cooperado.update({
+      where: { id },
+      data: updateCooperadoDto,
+      omit: {
+        password: true,
+      },
+    });
+
+
+
+
+
+
+
   }
 
-  async remove(id: number) {
-    return `This action removes a #${id} cooperado`;
+  async remove(id: string,userId:string) {
+    
+
+    const user = await this.prismaService.cooperado.findFirst({
+      where: {
+        id,
+      },
+    });
+
+    if (!user) {
+      throw new ConflictException('User not found');
+    }
+
+    return await this.prismaService.cooperado.delete({
+      where: {
+        id,
+      },
+    });
+
+
+
+
+
+
+    
   }
 
   async updateStatus(id: string, arg: boolean) {
