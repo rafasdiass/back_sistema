@@ -4,12 +4,23 @@ import { UpdateComercialDto } from './dto/update-comercial.dto';
 import { AuthService } from 'src/auth/auth.service';
 import { PrismaService } from 'src/prisma.service';
 import { stat } from 'fs';
+import { first } from 'rxjs';
+import { CooperadosService } from 'src/cooperados/cooperados.service';
+import { CreateUserDto } from 'src/auth/dto/create-auth.dto';
 
 @Injectable()
 export class ComercialService {
+  
+  
+  
+  async createCooperado(createCooperadoDto: CreateUserDto, userId: string) {
+    
+    await this.cooperadosService.create(createCooperadoDto,userId)
+  }
+  
  
 
-  constructor (private authService:AuthService,private prismaService:PrismaService){}
+  constructor (private authService:AuthService,private prismaService:PrismaService, private cooperadosService:CooperadosService){}
 
 
   async dashboard(userId: string) {
@@ -93,7 +104,8 @@ export class ComercialService {
           id: true,
           first_name: true,
           last_name: true,
-          email: true
+          email: true,
+          cpf: true
         }
       });
       // retorna o id, nome e email dos comerciais
@@ -101,7 +113,9 @@ export class ComercialService {
       return comerciais.map(comercial => {
         return {
           id: comercial.id,
-          name: comercial.first_name + ' ' + comercial.last_name,
+          first_name: comercial.first_name,
+          last_name: comercial.last_name,
+          cpf: comercial.cpf,
           email: comercial.email
         }
       }
@@ -181,6 +195,17 @@ export class ComercialService {
     
     }
 
+
+
+
+  }
+
+  async findAllCooperados(userId: string,role: string) {
+
+    const cooperados = this.cooperadosService.findAll(userId,role);
+
+   
+    return cooperados;
 
 
 

@@ -6,6 +6,7 @@ import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'src/prisma.service';
 import { find } from 'rxjs';
 import { JwtService } from '@nestjs/jwt';
+import { cp } from 'fs';
 @Injectable()
 export class AuthService {
   
@@ -15,9 +16,51 @@ export class AuthService {
   private jwtService: JwtService,
   ) {}
 
+  async createPassword(createPasswordDto:LoginUserDto) {
+
+    const {cpf,password} = createPasswordDto
+    
+    try {
+      // Verifica primeiro se o usuário existe em alguma das tabelas
+      const user = await this.prismaService.cooperado.findFirst({
+        where: { cpf },
+      }) || await this.prismaService.comercial.findFirst({
+        where: { cpf },
+      });
+
+      // Se não encontrou o usuário em nenhuma tabela, lança erro
+      if (!user) {
+        throw new BadRequestException('User not found');
+      }
+
+      // Gera o hash da nova senha
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Decide qual tabela atualizar com base na existência de comercialId
+      if (user.hasOwnProperty('comercialId')) { 
+        await this.prismaService.cooperado.update({
+          where: { cpf },
+          data: { password: hashedPassword },
+        });
+      } else {
+        await this.prismaService.comercial.update({
+          where: { cpf },
+          data: { password: hashedPassword },
+        });
+      }
+
+      return { message: 'Password updated successfully' };
+
+    } catch (error) {
+      throw new BadRequestException('Error updating password');
+    }
+   
+    
+  }
+
   async create(createUserDto: CreateUserDto, userId: string, role: string) {
     
-    const {first_name, last_name,phone, email, password, cpf, address } = createUserDto;
+    const {first_name, last_name,phone, email, cpf, address } = createUserDto;
     
     // Verifica se o usuário já existe
     const userAlreadyExists = await this.findByCpfOrEmail(cpf, email);
@@ -26,8 +69,8 @@ export class AuthService {
     }
   
     // Hash seguro da senha
-    const hashedPassword = await bcrypt.hash(password, 10);
-  
+   
+    
     // Mapeamento de funções de criação com base no role
     const roleMap = {
       cooperado: () =>
@@ -36,7 +79,7 @@ export class AuthService {
             first_name,
             last_name,
             email,
-            password: hashedPassword,
+            password: '',
             role: 'COOPERADO',
             cpf,
             phone,
@@ -51,7 +94,7 @@ export class AuthService {
             first_name,
             last_name,
             email,
-            password: hashedPassword,
+            password: '',
             role: 'COMERCIAL',
             cpf,
             phone,
@@ -66,7 +109,7 @@ export class AuthService {
             first_name,
             last_name,
             email,
-            password: hashedPassword,
+            password: '',
             role: 'ADMIN',
             cpf,
             phone,

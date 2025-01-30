@@ -8,62 +8,25 @@ import { Roles } from 'src/auth/roles.decorator';
 import { GetUserId } from 'src/auth/user.decorator';
 
 import { Configuracoes } from './dto/configs.interface';
+import { ComercialService } from 'src/comercial/comercial.service';
 
 
-@Controller('admin')
+@Controller('resumo')
 @UseGuards(AuthGuard('jwt'),RolesGuard)
-@Roles('ADMIN')
-export class AdminController {
-  constructor(private readonly adminService: AdminService) {}
+//@Roles('ADMIN')
+export class ResumoController {
+  constructor(private readonly adminService: AdminService,private readonly comercialService: ComercialService) {}
 
-  @Get('config-system')
-  async getConfigs(@Body() configs:Configuracoes,@GetUserId() userId: string) {
-    return await this.adminService.getConfigs(configs,userId); // Sempre desativa
-  }
-
-  @Post('comerciais')
-  async createComercial(@Body() createAdminDto: CreateAdminDto,@GetUserId() userId: string) {
+  @Roles('COMERCIAL')
+  @Get('comercial')
+  async dashboardComercial(@GetUserId() userId: string) {
     console.log('chegou aqui');
-    return await this.adminService.createComercial(createAdminDto,userId);
+    return await this.comercialService.dashboard(userId); 
   }
-  
-  @Post('registro')
-  async createAdmin(@Body() createAdmindto: CreateAdminDto,@GetUserId() userId: string) {
-    return await this.adminService.create(createAdmindto,userId);
-  }
-
-  // ROTA PARA VALIDAR USUÁRIO
-  
-  @Patch('validate/:id')
-  async validateUser(@Param('id') id: string) {
-    return await this.adminService.updateStatus(id, true); // Sempre ativa
-  }
-
-  
-  @Get('validate')
-  async validateUsers(@Request() req:any,@GetUserId() userId: string) {
-      
-      return await this.adminService.findAllDeactivate(userId,req.user.role);
-    }
-  // ROTA PARA DESATIVAR USUÁRIO
-  
-  @Patch('invalidate/:id')
-  async invalidateUser(@Param('id') id: string) {
-    return await this.adminService.updateStatus(id, false); // Sempre desativa
-  }
-
-  
-  
-
-  
-  @Put('config-system')
-  async updateConfigs(@Body() configs:Configuracoes,@GetUserId() userId: string) {
-    return await this.adminService.updateConfigs(configs,userId); // Sempre desativa
-  }
-
   
   @Get('admin')
   async dashboard(@GetUserId() userId: string) {
+    console.log('chegou aqui');
     return await this.adminService.dashboard(userId); 
   }
 
@@ -82,7 +45,11 @@ export class AdminController {
   }
 
   
- 
+  @Post('comerciais')
+  async createComercial(@Body() createAdminDto: CreateAdminDto,@GetUserId() userId: string) {
+   
+    return await this.adminService.createComercial(createAdminDto,userId);
+  }
 
   
   @Get('comerciais/:id')

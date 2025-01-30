@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
 import { ComercialService } from './comercial.service';
 import { CreateComercialDto } from './dto/create-comercial.dto';
 import { UpdateComercialDto } from './dto/update-comercial.dto';
@@ -12,10 +12,10 @@ import { GetUserId } from 'src/auth/user.decorator';
 @Roles('COMERCIAL','ADMIN')
 @Controller('comercial')
 export class ComercialController {
-  constructor(private readonly comercialService: ComercialService) {}
+  constructor(private readonly comercialService: ComercialService , ) {}
 
   //ROTA PARA CRIAR COMERCIAL
-  @Roles('COMERCIAL')
+  //@Roles('COMERCIAL')
   @Get('dashboard')
   async dashboard(@GetUserId() userId: string) {
     console.log(userId);
@@ -31,7 +31,18 @@ export class ComercialController {
   findAll() {
     return this.comercialService.findAll();
   }
-  
+
+  @Get('cooperados')
+  findAllCooperados(@Request() req:any,@GetUserId() userId: string) {
+    return this.comercialService.findAllCooperados(userId,req.user.role);
+  }
+
+
+  @Post('cooperados')
+  async createCooperados(@Body() createCooperadoDto:CreateUserDto,@GetUserId() userId: string){
+    return this.comercialService.createCooperado(createCooperadoDto,userId)
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.comercialService.findOne(id);

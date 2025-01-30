@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Put, Request } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from './dto/create-auth.dto';
 import { UpdateUserDto } from './dto/update-auth.dto';
@@ -12,6 +12,11 @@ import { GetUserId } from './user.decorator';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Put('/users/first-access')
+  async createPassword(@Body() createPasswordDto:LoginUserDto) {
+    console.log(createPasswordDto)
+    return await this.authService.createPassword(createPasswordDto);
+  }
   // ROTA PARA LOGIN
   @Post('login')
   async login(@Body() loginUserDto:LoginUserDto) {
@@ -19,5 +24,8 @@ export class AuthController {
   }
 
   
+  // ROTA PARA DEFINIR SENHA
 
+
+  
 }

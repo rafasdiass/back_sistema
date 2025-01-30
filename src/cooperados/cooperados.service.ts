@@ -3,6 +3,7 @@ import { CreateCooperadoDto } from './dto/create-cooperado.dto';
 import { UpdateCooperadoDto } from './dto/update-cooperado.dto';
 import { PrismaService } from 'src/prisma.service';
 import { AuthService } from 'src/auth/auth.service';
+import { first } from 'rxjs';
 
 @Injectable()
 export class CooperadosService {
@@ -32,7 +33,8 @@ export class CooperadosService {
             email:true,
             phone:true,
             cpf:true,
-            is_active:true
+            is_active:true,
+            address:true
 
           }
         }
@@ -41,11 +43,13 @@ export class CooperadosService {
       return users.map(user => ({
         
         id: user.id,
-        nome: user.first_name + ' ' + user.last_name,
+        first_name: user.first_name,
+        last_name: user.last_name,
         email: user.email,
         phone: user.phone,
         cpf: user.cpf,
-        is_active: user.is_active
+        is_active: user.is_active,
+        address: user.address
 
       }));
     }
@@ -60,20 +64,22 @@ export class CooperadosService {
           phone:true,
           cpf:true,
           is_active:true,
-          comercialId:true
+          comercialId:true,
+          address:true
         }
       }
     )
 
     return users.map(user => ({
         id: user.id,
-        nome: user.first_name + ' ' + user.last_name,
+        first_name: user.first_name,
+        last_name: user.last_name,
         email: user.email,
         phone: user.phone,
         cpf: user.cpf,
         is_active: user.is_active,
-        comercialId: user.comercialId
-
+        comercialId: user.comercialId,
+        address: user.address
         
       }));
 

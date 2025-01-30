@@ -41,6 +41,7 @@ model Admin {
   password          String
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+  isFirstLogin    Boolean     @default(false)
 }
 
 model Comercial {
@@ -58,6 +59,7 @@ model Comercial {
   cooperados        Cooperado[] // Relacionamento com Cooperado
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
+  isFirstLogin    Boolean     @default(true)
 }
 
 
@@ -74,9 +76,10 @@ model Cooperado {
   is_active         Boolean     @default(false)
   password          String
   comercialId       String      // Campo para a chave estrangeira
-  comercial         Comercial   @relation(fields: [comercialId], references: [id]) // Relacionamento com Comercial
+  comercial         Comercial   @relation(fields: [comercialId], references: [id],onDelete: Cascade)  // Relacionamento com Comercial
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
+  isFirstLogin    Boolean     @default(true)
 }
 
 model Configs{
