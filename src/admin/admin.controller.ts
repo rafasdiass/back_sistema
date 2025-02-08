@@ -111,6 +111,14 @@ export class AdminController {
     return await this.adminService.findAllCooperado(userId);
   }
 
+
+  @Get('cooperados/pendentes')
+  async findAllCooperadoPendentes(@Request() req:any,@GetUserId() userId: string) {
+    console.log(await this.adminService.findAllCooperado(userId,req.user.role))
+    return await this.adminService.findAllCooperado(userId,req.user.role);
+  }
+
+
   @Post('cooperados')
   async createCooperado(@Body() createAdminDto: CreateAdminDto,@GetUserId() userId: string) {
      console.log('chegou aqui');

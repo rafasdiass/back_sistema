@@ -221,7 +221,7 @@ export class AdminService {
     await this.cooperadosService.update(id,updateAdminDto,userId);
   }
 
-  async findAllCooperado(userId: string) {
+  async findAllCooperado(userId: string, role?: string) {
 
     return await this.cooperadosService.findAll(userId,'admin');
 
@@ -236,6 +236,10 @@ export class AdminService {
     await this.cooperadosService.create(createAdminDto,userId);
   }
 
+  async findAllDeactivateCooperado(userId: string, role: string) {
+    return await this.cooperadosService.findAllDeactivate(userId,role
+    );
+  }
  
 
 
