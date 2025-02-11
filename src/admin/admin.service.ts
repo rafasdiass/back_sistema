@@ -11,6 +11,7 @@ import { ComercialService } from 'src/comercial/comercial.service';
 @Injectable()
 export class AdminService {
   
+  
 
   
   
@@ -274,5 +275,15 @@ export class AdminService {
 
   remove(id: number) {
     return `This action removes a #${id} admin`;
+    
+  }
+
+
+  // FUNCOES PARA PAGAMENTOS
+
+  findAllPagamentos(userId: string) {
+
+    
+    throw new Error('Method not implemented.');
   }
 }

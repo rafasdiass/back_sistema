@@ -111,6 +111,10 @@ export class AdminController {
     return await this.adminService.findAllCooperado(userId);
   }
 
+  @Get('pagamentos')
+  async findAllPagamentos(@GetUserId() userId: string) {
+    return await this.adminService.findAllPagamentos(userId);
+  }
 
   @Get('cooperados/pendentes')
   async findAllCooperadoPendentes(@Request() req:any,@GetUserId() userId: string) {

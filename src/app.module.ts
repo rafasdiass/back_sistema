@@ -9,6 +9,8 @@ import { ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { ComercialModule } from './comercial/comercial.module';
 import { AdminModule } from './admin/admin.module';
+import { NotificacoesModule } from './notificacoes/notificacoes.module';
+import { NotificationsGateway } from './notification/notification.gateway';
 @Module({
   imports: [AuthModule, PassportModule,ConfigModule.forRoot({ isGlobal: true }), CooperadosModule,
     JwtModule.registerAsync({global:true,
@@ -20,8 +22,9 @@ import { AdminModule } from './admin/admin.module';
     }),
     ComercialModule,
     AdminModule,
+    NotificacoesModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService,NotificationsGateway],
 })
 export class AppModule {}
