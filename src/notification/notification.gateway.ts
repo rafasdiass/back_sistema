@@ -32,16 +32,16 @@ import {
       console.log('Enviando notificação:', message);
       
       // Emitindo o evento para todos os clientes conectados
-      this.server.emit('newNotification', { message });
+      this.server.emit('adminNotification', { message });
   
       // Chamando manualmente a função que escuta, para testar no backend
       this.handleNotificationTest({ message });
     }
   
     /**
-     * 🔹 Escutando o evento "newNotification" no próprio backend
+     * 🔹 Escutando o evento "adminNotification" no próprio backend
      */
-    @SubscribeMessage('newNotification')
+    @SubscribeMessage('adminNotification')
     handleNotificationTest(@MessageBody() data: any) {
       console.log('Notificação recebida dentro do próprio backend:', data);
     }

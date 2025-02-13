@@ -3,7 +3,7 @@ import { NotificacoesService } from './notificacoes.service';
 import { CreateNotificacoeDto } from './dto/create-notificacoe.dto';
 import { UpdateNotificacoeDto } from './dto/update-notificacoe.dto';
 
-@Controller('notificacoes')
+@Controller('notificacoe')
 export class NotificacoesController {
   constructor(private readonly notificacoesService: NotificacoesService) {}
 
