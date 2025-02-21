@@ -4,7 +4,7 @@ import { CreateComercialDto } from './dto/create-comercial.dto';
 import { UpdateComercialDto } from './dto/update-comercial.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { Roles } from 'src/auth/roles.decorator';
-import { RolesGuard } from 'src/auth/roles.stategy';
+import { RolesGuard } from 'src/auth/roles.guard';
 import { CreateUserDto } from 'src/auth/dto/create-auth.dto';
 import { GetUserId } from 'src/auth/user.decorator';
 

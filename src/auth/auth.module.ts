@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { AuthController } from './auth.controller';
+import { AuthService } from 'src/auth/auth.service';
+import { AuthController } from 'src/auth/auth.controller';
 import { PrismaService } from 'src/prisma.service';
-
-import { JwtStrategy } from './jwt.strategy';
+import { JwtStrategy } from 'src/auth/jwt.strategy';
 
 @Module({
-  imports: [  ],
+  imports: [], // Removemos `JwtModule` e `PassportModule` porque são globais no AppModule
   controllers: [AuthController],
-  providers: [AuthService,PrismaService,JwtStrategy],
+  providers: [AuthService, PrismaService, JwtStrategy],
+  exports: [AuthService], // Apenas `AuthService` precisa ser exportado
 })
 export class AuthModule {}

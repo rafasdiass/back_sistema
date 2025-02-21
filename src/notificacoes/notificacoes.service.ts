@@ -1,26 +1,58 @@
 import { Injectable } from '@nestjs/common';
 import { CreateNotificacoeDto } from './dto/create-notificacoe.dto';
 import { UpdateNotificacoeDto } from './dto/update-notificacoe.dto';
+import { NotificacoesRepository } from './notificacoes.repository';
+import { NotificacaoEntity } from './entities/notificacoe.entity';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class NotificacoesService {
-  create(createNotificacoeDto: CreateNotificacoeDto) {
-    return 'This action adds a new notificacoe';
+  constructor(
+    private readonly notificacoesRepository: NotificacoesRepository,
+  ) {}
+
+  // Criar notificação via factory method
+  create(createNotificacoeDto: CreateNotificacoeDto): NotificacaoEntity {
+    const entity = NotificacaoEntity.fromCreateDto(
+      createNotificacoeDto,
+      uuidv4(),
+    );
+    return this.notificacoesRepository.create(entity);
   }
 
-  findAll() {
-    return `This action returns all notificacoes`;
+  findAll(): NotificacaoEntity[] {
+    return this.notificacoesRepository.findAll();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} notificacoe`;
+  findAdminNotifications(): NotificacaoEntity[] {
+    return this.notificacoesRepository.findAdminNotifications();
   }
 
-  update(id: number, updateNotificacoeDto: UpdateNotificacoeDto) {
-    return `This action updates a #${id} notificacoe`;
+  findOne(id: string): NotificacaoEntity | { error: string } {
+    const notif = this.notificacoesRepository.findOne(id);
+    if (!notif) {
+      return { error: `Notificação com ID ${id} não encontrada.` };
+    }
+    return notif;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} notificacoe`;
+  update(
+    id: string,
+    dto: UpdateNotificacoeDto,
+  ): NotificacaoEntity | { error: string } {
+    const existing = this.notificacoesRepository.findOne(id);
+    if (!existing) {
+      return { error: `Notificação com ID ${id} não encontrada.` };
+    }
+    existing.updateFromDto(dto);
+    return existing;
+  }
+
+  remove(id: string): NotificacaoEntity | { error: string } {
+    const removed = this.notificacoesRepository.remove(id);
+    if (!removed) {
+      return { error: `Notificação com ID ${id} não encontrada.` };
+    }
+    return removed;
   }
 }

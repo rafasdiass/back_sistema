@@ -3,7 +3,7 @@ import { CooperadosService } from './cooperados.service';
 import { CreateCooperadoDto } from './dto/create-cooperado.dto';
 import { UpdateCooperadoDto } from './dto/update-cooperado.dto';
 import { AuthGuard } from '@nestjs/passport';
-import { RolesGuard } from 'src/auth/roles.stategy';
+import { RolesGuard } from 'src/auth/roles.guard';
 import { Roles } from 'src/auth/roles.decorator';
 import { GetUserId } from 'src/auth/user.decorator';
 import { CreateUserDto } from 'src/auth/dto/create-auth.dto';
