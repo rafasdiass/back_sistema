@@ -14,13 +14,12 @@ import { TipoDestinatario } from './models/notificacao.model';
 import { JwtService } from '@nestjs/jwt';
 
 /**
- * Gateway WebSocket para gerenciamento de notificações.
- * Responsável por conexões, emissão de eventos e segmentação de notificações.
+ * Gateway WebSocket para envio de notificações aos cooperados e admins.
  */
 @WebSocketGateway({
-  namespace: 'notificacoes', // => /notificacoes
+  namespace: 'notificacoes',
   cors: {
-    origin: '*', // Ajuste para restringir a domínios específicos, se necessário.
+    origin: '*', // Ajuste para restringir a domínios específicos se necessário.
   },
 })
 export class NotificacoesGateway
@@ -29,9 +28,6 @@ export class NotificacoesGateway
   @WebSocketServer()
   server: Server;
 
-  /**
-   * Mapeia `SocketID` para `{ role, id }` de cada conexão ativa.
-   */
   private socketRoles = new Map<string, { role: string; id: string }>();
 
   constructor(
@@ -40,7 +36,7 @@ export class NotificacoesGateway
   ) {}
 
   /**
-   * Método disparado quando um novo cliente se conecta ao WebSocket.
+   * Método chamado quando um cliente se conecta.
    */
   async handleConnection(client: Socket): Promise<void> {
     try {
@@ -56,7 +52,7 @@ export class NotificacoesGateway
         return;
       }
 
-      // Decodifica o token JWT
+      // Decodifica o token JWT para obter o usuário autenticado
       const decoded = this.jwtService.verify(token);
       const role = decoded.role;
       const userId = decoded.id;
@@ -65,10 +61,10 @@ export class NotificacoesGateway
         `[NotificacoesGateway] Nova conexão: SocketID: ${client.id}, Role: ${role}, UserID: ${userId}`,
       );
 
-      // Armazena os dados do usuário na conexão
+      // Armazena o usuário conectado
       this.socketRoles.set(client.id, { role, id: userId });
 
-      // Adiciona o cliente às salas conforme seu papel (role)
+      // Adiciona o cliente às salas conforme seu papel
       if (role === 'COOPERADO') {
         client.join('cooperados');
         client.join(`cooperado_${userId}`);
@@ -86,16 +82,15 @@ export class NotificacoesGateway
   }
 
   /**
-   * Método disparado quando um cliente se desconecta.
+   * Método chamado quando um cliente se desconecta.
    */
   handleDisconnect(client: Socket): void {
-    console.log(`[NotificacoesGateway] Desconectado: ${client.id}`);
+    console.log(`[NotificacoesGateway] Desconexão: ${client.id}`);
     this.socketRoles.delete(client.id);
   }
 
   /**
-   * Evento WebSocket para criação de notificações.
-   * O frontend pode emitir 'createNotification' para enviar novas notificações.
+   * Evento para criar e enviar notificações.
    */
   @SubscribeMessage('createNotification')
   async handleCreateNotification(
@@ -117,7 +112,7 @@ export class NotificacoesGateway
       // Cria a notificação usando o serviço
       const newNotification = await this.notificacoesService.create(dto);
 
-      // Emite a notificação para os destinatários corretos
+      // Emite a notificação para os cooperados
       this.emitByDestination(newNotification);
 
       return { success: true, notification: newNotification };
@@ -131,15 +126,14 @@ export class NotificacoesGateway
   }
 
   /**
-   * Método público para que OUTRAS camadas (ex.: Controller, ou outro Service)
-   * possam enviar notificações via WebSocket após um CRUD ou qualquer evento.
+   * Método público para que outras camadas possam enviar notificações via WebSocket.
    */
   public broadcastNotification(notificationData: any): void {
     this.emitByDestination(notificationData);
   }
 
   /**
-   * Método responsável por enviar notificações segmentadas com base no destinatário.
+   * Método que emite notificações segmentadas.
    */
   private emitByDestination(notification: any): void {
     const { destinatario, destinatariosEspecificos } = notification;
@@ -150,6 +144,9 @@ export class NotificacoesGateway
         break;
 
       case TipoDestinatario.TODOS_COOPERADOS:
+        console.log(
+          '[NotificacoesGateway] Enviando notificação para TODOS os cooperados',
+        );
         this.server
           .to('cooperados')
           .emit('cooperadoNotification', notification);
@@ -158,6 +155,9 @@ export class NotificacoesGateway
       case TipoDestinatario.COOPERADOS_ESPECIFICOS:
         if (Array.isArray(destinatariosEspecificos)) {
           destinatariosEspecificos.forEach((coopId: string) => {
+            console.log(
+              `[NotificacoesGateway] Enviando notificação para cooperado ${coopId}`,
+            );
             this.server
               .to(`cooperado_${coopId}`)
               .emit('cooperadoNotification', notification);

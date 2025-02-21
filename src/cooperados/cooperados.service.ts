@@ -3,229 +3,206 @@ import { CreateCooperadoDto } from './dto/create-cooperado.dto';
 import { UpdateCooperadoDto } from './dto/update-cooperado.dto';
 import { PrismaService } from 'src/prisma.service';
 import { AuthService } from 'src/auth/auth.service';
-import { first } from 'rxjs';
+import { NotificacoesService } from 'src/notificacoes/notificacoes.service';
+import { NotificacoesGateway } from 'src/notificacoes/notification.gateway';
+import { CreateNotificacoeDto } from 'src/notificacoes/dto/create-notificacoe.dto';
 
 @Injectable()
 export class CooperadosService {
+  constructor(
+    private prismaService: PrismaService,
+    private authService: AuthService,
+    private notificacoesService: NotificacoesService,
+    private notificacoesGateway: NotificacoesGateway,
+  ) {}
 
-  constructor(private  prismaService: PrismaService,private authService:AuthService) {}
+  async create(createCooperadoDto: CreateCooperadoDto, userId: string) {
+    const newCooperado = await this.authService.create(
+      createCooperadoDto,
+      userId,
+      'cooperado',
+    );
 
+    // 🔥 Criar e salvar a notificação
+    const notificacao = this.notificacoesService.create({
+      mensagem: `📢 Um novo cooperado foi cadastrado: ${createCooperadoDto.first_name} ${createCooperadoDto.last_name}!`,
+      destinatario: 'TODOS_COOPERADOS',
+    } as CreateNotificacoeDto);
 
-  async create(createCooperadoDto: CreateCooperadoDto,userId: string) {
-    
-    await this.authService.create(createCooperadoDto,userId,'cooperado');
+    // 🔥 Enviar via WebSocket
+    this.notificacoesGateway.broadcastNotification(notificacao);
 
+    return newCooperado;
   }
 
-  async findAll(userId:string, role:string) {
-    
+  async findAll(userId: string, role: string) {
+    let users;
 
     if (role === 'comercial') {
-      const  users = await this.prismaService.cooperado.findMany(
-        {
-          where:{
-            comercialId:userId
-          },
-          select:{
-            id:true,
-            first_name:true,
-            last_name:true,
-            email:true,
-            phone:true,
-            cpf:true,
-            is_active:true,
-            address:true
-
-          }
-        }
-      )
-
-      return users.map(user => ({
-        
-        id: user.id,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        email: user.email,
-        phone: user.phone,
-        cpf: user.cpf,
-        is_active: user.is_active,
-        address: user.address
-
-      }));
-    }
-
-    const  users = await this.prismaService.cooperado.findMany(
-      {
-        select:{
-          id:true,
-          first_name:true,
-          last_name:true,
-          email:true,
-          phone:true,
-          cpf:true,
-          is_active:true,
-          comercialId:true,
-          address:true
-        }
-      }
-    )
-
-    return users.map(user => ({
-        id: user.id,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        email: user.email,
-        phone: user.phone,
-        cpf: user.cpf,
-        is_active: user.is_active,
-        comercialId: user.comercialId,
-        address: user.address
-        
-      }));
-
-  }
-
-
-  async findAllDeactivate(userId:string, role:string):Promise<any> {
-    
-    
-    if (role === 'comercial') {
-      const  users = await this.prismaService.cooperado.findMany(
-        {
-          where:{
-            comercialId:userId,
-            AND:{
-              is_active :false
-            }
-            
-          }
-        }
-      )
-
-      users.forEach(user => {
-        delete user.password;
+      users = await this.prismaService.cooperado.findMany({
+        where: { comercialId: userId },
+        select: {
+          id: true,
+          first_name: true,
+          last_name: true,
+          email: true,
+          phone: true,
+          cpf: true,
+          is_active: true,
+          address: true,
+        },
       });
-
-      return users
+    } else {
+      users = await this.prismaService.cooperado.findMany({
+        select: {
+          id: true,
+          first_name: true,
+          last_name: true,
+          email: true,
+          phone: true,
+          cpf: true,
+          is_active: true,
+          comercialId: true,
+          address: true,
+        },
+      });
     }
 
-    let  users = await this.prismaService.cooperado.findMany()
+    return users;
+  }
 
-    //REMOVER A SENHA DOS USUÁRIOS
+  async findAllDeactivate(userId: string, role: string) {
+    let users;
 
-    return users.map(user => {
-    const { password, ...rest } = user; // Remove o campo password
-    return rest;
-    });
+    if (role === 'comercial') {
+      users = await this.prismaService.cooperado.findMany({
+        where: { comercialId: userId, is_active: false },
+        select: {
+          id: true,
+          first_name: true,
+          last_name: true,
+          email: true,
+          phone: true,
+          cpf: true,
+          is_active: true,
+          address: true,
+        },
+      });
+    } else {
+      users = await this.prismaService.cooperado.findMany({
+        where: { is_active: false },
+        select: {
+          id: true,
+          first_name: true,
+          last_name: true,
+          email: true,
+          phone: true,
+          cpf: true,
+          is_active: true,
+          comercialId: true,
+          address: true,
+        },
+      });
+    }
 
-
-
+    return users;
   }
 
   async findOne(id: string) {
-    
     const user = await this.prismaService.cooperado.findFirst({
-      where: {
-        id,
-      },
+      where: { id },
     });
 
     if (!user) {
       throw new ConflictException('User not found');
     }
 
-    return {
-      ...user,
-      password: undefined,
-    }
-
+    const { password, ...rest } = user;
+    return rest;
   }
 
-  async update(id: string, updateCooperadoDto: UpdateCooperadoDto,userId:string) {
-    
+  async update(
+    id: string,
+    updateCooperadoDto: UpdateCooperadoDto,
+    userId: string,
+  ) {
     const user = await this.prismaService.cooperado.findFirst({
-      where: {
-        id,
-      },
+      where: { id },
     });
 
     if (!user) {
       throw new ConflictException('User not found');
     }
 
-    return await this.prismaService.cooperado.update({
+    const updatedUser = await this.prismaService.cooperado.update({
       where: { id },
       data: updateCooperadoDto,
-      omit: {
-        password: true,
-      },
     });
 
+    // 🔥 Criar e salvar a notificação
+    const notificacao = this.notificacoesService.create({
+      mensagem: `📢 Dados do cooperado ${updatedUser.first_name} ${updatedUser.last_name} foram atualizados.`,
+      destinatario: 'COOPERADOS_ESPECIFICOS',
+      destinatariosEspecificos: [id],
+    } as CreateNotificacoeDto);
 
+    // 🔥 Enviar via WebSocket
+    this.notificacoesGateway.broadcastNotification(notificacao);
 
-
-
-
-
+    return updatedUser;
   }
 
-  async remove(id: string,userId:string) {
-    
-
+  async remove(id: string, userId: string) {
     const user = await this.prismaService.cooperado.findFirst({
-      where: {
-        id,
-      },
+      where: { id },
     });
 
     if (!user) {
       throw new ConflictException('User not found');
     }
 
-    return await this.prismaService.cooperado.delete({
-      where: {
-        id,
-      },
-    });
+    await this.prismaService.cooperado.delete({ where: { id } });
 
+    // 🔥 Criar e salvar a notificação
+    const notificacao = this.notificacoesService.create({
+      mensagem: `⚠️ O cooperado ${user.first_name} ${user.last_name} foi removido.`,
+      destinatario: 'COOPERADOS_ESPECIFICOS',
+      destinatariosEspecificos: [id],
+    } as CreateNotificacoeDto);
 
+    // 🔥 Enviar via WebSocket
+    this.notificacoesGateway.broadcastNotification(notificacao);
 
-
-
-
-    
+    return { message: 'Cooperado removido com sucesso' };
   }
 
-  async updateStatus(id: string, arg: boolean) {
-
+  async updateStatus(id: string, isActive: boolean) {
     const user = await this.prismaService.cooperado.findFirst({
-      where: {
-        id,
-      },
+      where: { id },
     });
 
     if (!user) {
       throw new ConflictException('User not found');
     }
-    if (user.is_active === arg) {
+    if (user.is_active === isActive) {
       throw new ConflictException('Status already set');
     }
 
-     // Atualiza o status do usuário E retorna o usuário atualizado SEM A SENHA
-
-    return await this.prismaService.cooperado.update({
+    const updatedUser = await this.prismaService.cooperado.update({
       where: { id },
-      data: {
-        is_active: arg,
-      },
-      omit: {
-       
-        password: true,
-      },  
+      data: { is_active: isActive },
     });
 
+    // 🔥 Criar e salvar a notificação
+    const notificacao = this.notificacoesService.create({
+      mensagem: `🟢 O status do cooperado ${updatedUser.first_name} ${updatedUser.last_name} foi atualizado.`,
+      destinatario: 'COOPERADOS_ESPECIFICOS',
+      destinatariosEspecificos: [id],
+    } as CreateNotificacoeDto);
 
+    // 🔥 Enviar via WebSocket
+    this.notificacoesGateway.broadcastNotification(notificacao);
 
+    return updatedUser;
   }
-  
 }
