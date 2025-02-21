@@ -5,28 +5,22 @@ import {
   MessageBody,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-
 import { NotificacoesService } from './notificacoes.service';
 import { CreateNotificacoeDto } from './dto/create-notificacoe.dto';
 import { TipoDestinatario } from './models/notificacao.model';
+import { JwtService } from '@nestjs/jwt';
 
 /**
- * O NotificacoesGateway fica responsável pela comunicação via WebSocket,
- * permitindo que o backend envie notificações aos clientes conectados
- * (cooperados, administradores, etc.) de forma segmentada, usando rooms.
- *
- * Responsabilidade Única (SRP):
- * - Este Gateway gerencia as conexões (conexão/disconexão) e roteia eventos
- *   (ex.: 'createNotification').
- * - A lógica de criação/atualização de notificações fica no NotificacoesService.
- * - A definição de repositórios/dados fica em outro lugar (respeitando SOLID).
+ * Gateway WebSocket para gerenciamento de notificações.
+ * Responsável por conexões, emissão de eventos e segmentação de notificações.
  */
 @WebSocketGateway({
   namespace: 'notificacoes', // => /notificacoes
   cors: {
-    origin: '*', // Ajuste caso queira restringir a domínios específicos.
+    origin: '*', // Ajuste para restringir a domínios específicos, se necessário.
   },
 })
 export class NotificacoesGateway
@@ -36,81 +30,104 @@ export class NotificacoesGateway
   server: Server;
 
   /**
-   * Armazena informações de cada socket conectado:
-   * - 'role': Se é 'ADMIN', 'COOPERADO' etc.
-   * - 'id': Identificador do usuário (ex.: 'cooperado_001', 'admin_123')
+   * Mapeia `SocketID` para `{ role, id }` de cada conexão ativa.
    */
   private socketRoles = new Map<string, { role: string; id: string }>();
 
-  constructor(private readonly notificacoesService: NotificacoesService) {}
+  constructor(
+    private readonly notificacoesService: NotificacoesService,
+    private readonly jwtService: JwtService, // Para decodificar JWT
+  ) {}
 
   /**
-   * Método disparado quando um novo client se conecta ao WebSocket.
-   * Aqui configuramos salas específicas para cada tipo (ADMIN, COOPERADO),
-   * permitindo emitir eventos de forma segmentada.
+   * Método disparado quando um novo cliente se conecta ao WebSocket.
    */
-  handleConnection(client: Socket): void {
-    const { role, id } = client.handshake.query;
+  async handleConnection(client: Socket): Promise<void> {
+    try {
+      const token =
+        client.handshake.auth.token ||
+        client.handshake.headers.authorization?.split(' ')[1];
 
-    console.log(
-      '[NotificacoesGateway] Nova conexão:',
-      'SocketID:',
-      client.id,
-      'Role:',
-      role,
-      'UserID:',
-      id,
-    );
-
-    // Armazena os dados para referência rápida
-    this.socketRoles.set(client.id, {
-      role: (role as string) || '',
-      id: (id as string) || '',
-    });
-
-    // Se for cooperado, entra nas salas 'cooperados' e 'cooperado_<id>'
-    if (role === 'COOPERADO') {
-      client.join('cooperados');
-      if (id) {
-        client.join(`cooperado_${id}`);
+      if (!token) {
+        console.warn(
+          `[NotificacoesGateway] Conexão recusada (Token ausente): ${client.id}`,
+        );
+        client.disconnect();
+        return;
       }
-    }
-    // Se for admin, entra nas salas 'admins' e 'admin_<id>'
-    else if (role === 'ADMIN') {
-      client.join('admins');
-      if (id) {
-        client.join(`admin_${id}`);
+
+      // Decodifica o token JWT
+      const decoded = this.jwtService.verify(token);
+      const role = decoded.role;
+      const userId = decoded.id;
+
+      console.log(
+        `[NotificacoesGateway] Nova conexão: SocketID: ${client.id}, Role: ${role}, UserID: ${userId}`,
+      );
+
+      // Armazena os dados do usuário na conexão
+      this.socketRoles.set(client.id, { role, id: userId });
+
+      // Adiciona o cliente às salas conforme seu papel (role)
+      if (role === 'COOPERADO') {
+        client.join('cooperados');
+        client.join(`cooperado_${userId}`);
+      } else if (role === 'ADMIN') {
+        client.join('admins');
+        client.join(`admin_${userId}`);
       }
+    } catch (error) {
+      console.error(
+        `[NotificacoesGateway] Erro ao autenticar usuário:`,
+        error.message,
+      );
+      client.disconnect();
     }
   }
 
   /**
    * Método disparado quando um cliente se desconecta.
-   * Aqui removemos o registro do socket, se necessário.
    */
   handleDisconnect(client: Socket): void {
-    console.log('[NotificacoesGateway] Desconexão:', client.id);
+    console.log(`[NotificacoesGateway] Desconectado: ${client.id}`);
     this.socketRoles.delete(client.id);
   }
 
   /**
-   * Exemplo de evento vindo do front-end.
-   * Se o front emitir 'createNotification' com dados do CreateNotificacoeDto,
-   * criamos a notificação (via NotificacoesService) e emitimos de acordo
-   * com o tipo de destinatário (admin, cooperados, etc.).
+   * Evento WebSocket para criação de notificações.
+   * O frontend pode emitir 'createNotification' para enviar novas notificações.
    */
   @SubscribeMessage('createNotification')
-  handleCreateNotification(@MessageBody() dto: CreateNotificacoeDto) {
-    console.log('[NotificacoesGateway] Evento createNotification:', dto);
+  async handleCreateNotification(
+    @MessageBody() dto: CreateNotificacoeDto,
+    @ConnectedSocket() client: Socket,
+  ) {
+    try {
+      console.log(`[NotificacoesGateway] Recebido createNotification:`, dto);
 
-    // 1. Cria a notificação via Service (lógica de negócio e persistência)
-    const newNotification = this.notificacoesService.create(dto);
+      // Garante que a conexão está autenticada
+      const user = this.socketRoles.get(client.id);
+      if (!user || !user.role || !user.id) {
+        console.warn(
+          `[NotificacoesGateway] Tentativa de envio sem autenticação: ${client.id}`,
+        );
+        return;
+      }
 
-    // 2. Emite a notificação para as salas corretas, baseado no tipoDestinatario
-    this.emitByDestination(newNotification);
+      // Cria a notificação usando o serviço
+      const newNotification = await this.notificacoesService.create(dto);
 
-    // 3. Retorno opcional para o cliente que originou o evento
-    return newNotification;
+      // Emite a notificação para os destinatários corretos
+      this.emitByDestination(newNotification);
+
+      return { success: true, notification: newNotification };
+    } catch (error) {
+      console.error(
+        `[NotificacoesGateway] Erro ao criar notificação:`,
+        error.message,
+      );
+      return { success: false, error: error.message };
+    }
   }
 
   /**
@@ -122,33 +139,22 @@ export class NotificacoesGateway
   }
 
   /**
-   * Método central de roteamento de notificação,
-   * que verifica o tipo de destinatário e emite somente para as salas relevantes.
+   * Método responsável por enviar notificações segmentadas com base no destinatário.
    */
   private emitByDestination(notification: any): void {
     const { destinatario, destinatariosEspecificos } = notification;
 
     switch (destinatario) {
-      /**
-       * Emite somente para admins
-       */
       case TipoDestinatario.ADMIN:
         this.server.to('admins').emit('adminNotification', notification);
         break;
 
-      /**
-       * Emite para todos cooperados
-       */
       case TipoDestinatario.TODOS_COOPERADOS:
         this.server
           .to('cooperados')
           .emit('cooperadoNotification', notification);
         break;
 
-      /**
-       * Emite para cooperados específicos, ex.: ['cooperado_001','cooperado_002']
-       * Cada cooperado fica na sala 'cooperado_cooperado_001', etc.
-       */
       case TipoDestinatario.COOPERADOS_ESPECIFICOS:
         if (Array.isArray(destinatariosEspecificos)) {
           destinatariosEspecificos.forEach((coopId: string) => {
@@ -159,13 +165,9 @@ export class NotificacoesGateway
         }
         break;
 
-      /**
-       * Caso não se encaixe nos tipos acima,
-       * envia para todos (opcional)
-       */
       default:
         console.warn(
-          '[NotificacoesGateway] Tipo de destinatário não reconhecido. Enviando para todos.',
+          `[NotificacoesGateway] Tipo de destinatário desconhecido. Enviando para todos.`,
         );
         this.server.emit('cooperadoNotification', notification);
         break;
